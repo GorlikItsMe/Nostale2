@@ -386,6 +386,39 @@ public class NostaleMain : MonoBehaviour
         return  WorldEncryption.Decrypt(recvPacket, recvPacket.Length).ToArray();
     }
 
+    public async void FastServerJoin()
+    {
+        Debug.Log("use FastServerJoin()");
+        loginServerIP = "167.86.78.190";
+        loginServerPort = 4000;
+        GameForgeLogin = false;
+        login = "Killrog";
+        password = "test";
+
+        NostaleMain nt = GameObject.Find("NostaleMain").GetComponent<NostaleMain>();
+
+        nt.Connect("167.86.78.190", 4000);
+        await nt.SetupNostaleVersionAsync();
+        nt.ConnectLogin();
+        
+        nt.Connect("167.86.78.190", 1337);
+        nt.ConnectWorld();
+        nt.GetCharactersList();
+        nt.SelectCharacter(0);
+
+        IEnumerator LoadGameScene_jhasdjas()
+        {
+            AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Scenes/Game");
+            while (!asyncLoad.isDone)
+            {
+                yield return null;
+            }
+        }
+        StartCoroutine(LoadGameScene_jhasdjas());
+
+        nt.StartGamePacketHandlerThread();
+    }
+
     public void Main()
     {
         Debug.LogError("Stara funkcja do usuniecia");
