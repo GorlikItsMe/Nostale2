@@ -22,7 +22,7 @@ public class SelectServer : MonoBehaviour
     }
     public void Select()
     {
-        serversList.SetActive(false);
+        serversList.SetActive(true); // jakies hide ale zeby mialo dostep do Login()
         loginForm.SetActive(true);
 
         Button loginbtn = loginForm.GetComponentInChildren<Button>();

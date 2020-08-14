@@ -51,17 +51,44 @@ public class LoginScreen : MonoBehaviour
 
     async Task<bool> LoginToServer()
     {
+        int i = 0;
+        UpdateStatus("Pobieranie kluczy deszyfrujących...");
+        if (await nt.SetupNostaleVersionAsync() == false)
+        {
+            UpdateStatus("BŁĄD. Nie udało się pobrać kluczy deszyfrujących.\nSpróbuj ponownie później.");
+            return false;
+        }
+
         if (nt.GameForgeLogin)
         {
             UpdateStatus("Logowanie do usługi GameForge...");
-        }
-        else
-        {
-            UpdateStatus("Pobieranie kluczy deszyfrujących...");
-            if (await nt.SetupNostaleVersionAsync() == false) {
-                UpdateStatus("BŁĄD. Nie udało się pobrać kluczy deszyfrujących.\nSpróbuj ponownie później.");
+            if(nt.AuthGameforge() == false)
+            {
+                UpdateStatus("BŁĄD. Nie udało się zalogować od usługi GameForge.\nSprawdz hasło");
                 return false;
             }
+
+            i = 0;
+            ClearChannelList();
+            TaskCompletionSource<bool> isAccountSelected = new TaskCompletionSource<bool>();
+            foreach (string acc in nt.GetAccountsGameforge())
+            {
+                string name = acc.Split(new char[] { ':' }, 2)[1];
+                GameObject item = Instantiate(SelectChannelBtnPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+                item.transform.SetParent(SelectChannelForm.transform);
+                item.GetComponentInChildren<RectTransform>().localPosition = new Vector3(0, 100 - 30 * i, 0);
+                item.GetComponentInChildren<Text>().text = $"{name}";
+                item.GetComponentInChildren<Button>().onClick.AddListener(delegate {
+                    nt.SelectAccountGameforge(name);
+                    isAccountSelected.SetResult(true);
+                });
+                i++;
+            }
+            UpdateStatus("Czekam na wybór konta GF");
+            await isAccountSelected.Task;
+        }
+
+            
             UpdateStatus("Łączenie z serwerem Logowania...");
             await Task.Run(() =>
             {
@@ -71,7 +98,7 @@ public class LoginScreen : MonoBehaviour
             UpdateStatus("Oczekiwanie na wybór kanału");
 
             // Rysowanie przycisków wyboru kanału
-            int i = 0;
+            i = 0;
             ClearChannelList();
             TaskCompletionSource<bool> isCharacterSelected = new TaskCompletionSource<bool>();
             List<ClistPacket> CharactersList = null;
@@ -110,7 +137,6 @@ public class LoginScreen : MonoBehaviour
                 });
                 i++;
             }
-        }
         return true;
     }
     public void ClearChannelList()

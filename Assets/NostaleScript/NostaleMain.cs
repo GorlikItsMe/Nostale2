@@ -17,6 +17,7 @@ using NosCore.Packets.ServerPackets.CharacterSelectionScreen;
 using NosCore.Packets.ServerPackets.Login;
 using NosCore.Packets.ServerPackets.MiniMap;
 using System.Threading.Tasks;
+using Nostale2.PacketHandler;
 
 public class NostaleMain : MonoBehaviour
 {
@@ -42,8 +43,9 @@ public class NostaleMain : MonoBehaviour
     int id = 53535;
 
     Queue<string> packetsQueue = new Queue<string>();
-    IDeserializer Deserializer = new Deserializer(new[] { typeof(AtPacket) });
+    // IDeserializer Deserializer = new Deserializer(new[] { typeof(AtPacket) });
 
+    PacketHandler PacketHandler = new PacketHandler();
 
     public bool AuthGameforge(){
         Debug.Log("Logowanie GameForge... (dodac wsparcie dla kilku jezykow)");
@@ -62,9 +64,9 @@ public class NostaleMain : MonoBehaviour
             if(account.Split(':')[1]==account_name){
                 session_token = ntAuth.getToken(account.Split(':')[0]);
                 logingf = account.Split(':')[1]+" GF 4"; // PL
-                Debug.Log("Logowanie PL");
+                /*Debug.Log("Logowanie PL");
                 Connect(loginServerIP, loginServerPort);
-                ConnectLogin();
+                ConnectLogin();*/
 
             }
         }
@@ -176,7 +178,7 @@ public class NostaleMain : MonoBehaviour
                     typeof(NsTestPacket),
                     typeof(NsTeStSubPacket),
             });
-            var packet = (NsTestPacket)Deserializer.Deserialize(loginpacketsuccess);
+            var packet = (NsTestPacket)Deserializer.Deserialize(loginpacketsuccess.Replace("  "," ")); // fix deseralizer becouse real packet have 2 spaces
 
             sessionId = packet.SessionId;
             ChannelList = new List<ChannelInfo>();
@@ -389,19 +391,19 @@ public class NostaleMain : MonoBehaviour
     public async void FastServerJoin()
     {
         Debug.Log("use FastServerJoin()");
-        loginServerIP = "167.86.78.190";
-        loginServerPort = 4000;
-        GameForgeLogin = false;
-        login = "Killrog";
-        password = "test";
+        loginServerIP = "79.110.84.75"; // 167.86.78.190
+        loginServerPort = 4004;
+        GameForgeLogin = true;
+        login = "nabijamrepe9@gmail.com";
+        password = "nabijamrepe";
 
         NostaleMain nt = GameObject.Find("NostaleMain").GetComponent<NostaleMain>();
 
-        nt.Connect("167.86.78.190", 4000);
+        nt.Connect("79.110.84.75", 4004);
         await nt.SetupNostaleVersionAsync();
         nt.ConnectLogin();
         
-        nt.Connect("167.86.78.190", 1337);
+        nt.Connect("79.110.84.188", 4010);
         nt.ConnectWorld();
         nt.GetCharactersList();
         nt.SelectCharacter(0);
@@ -452,56 +454,38 @@ public class NostaleMain : MonoBehaviour
     {
         StartCoroutine(PacketsMain());
     }
+    void Start()
+    {
+        PacketHandler.Setup();
+    }
 
     IEnumerator PacketsMain()
     {
         if (packetsQueue.Count != 0){
+            
             string packet_raw = packetsQueue.Dequeue();
-            string h = packet_raw.Split(' ')[0];
-            if (packet_raw.StartsWith("OK"))
-            {
-                Debug.Log("Pakiet OK tu był");
-                /*AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Scenes/Game");
-                // Wait until the asynchronous scene fully loads
-                while (!asyncLoad.isDone)
-                {
-                    yield return null;
-                }
-                */
-            }
-            else if (h == "at")
-            {
-                var p = (AtPacket)Deserializer.Deserialize(packet_raw);
-                Debug.Log("Load map: " + p.MapId);
-
-                GameObject player = Instantiate(PlayerGO, new Vector3(p.PositionX, 0, p.PositionY), Quaternion.identity);
-                player.transform.position = new Vector3(p.PositionX, 0, p.PositionY);
-
-                PlayerControler pc = player.GetComponent<PlayerControler>();
-                pc.CharacterId = p.CharacterId;
-                yield return null;
-            }
-            else
-            {
-                if (h != "stat")
-                {
-                    Debug.LogWarning(packet_raw);
-                }
-                yield return null;
-            }
+            PacketHandler.Handle(packet_raw);
             yield return null;
         }
         
     
     }
 
-    public void Test()
+    public GameObject PlacePlayer(int x, int y)
     {
-        Debug.Log("pog?");
-        //GameObject player = Instantiate(PlayerGO, new Vector3(0, 0, 0), Quaternion.identity);
-        //player.transform.position = new Vector3(100, 0, 50);
+        Debug.LogWarning("TODO: check is player exist on board");
+        GameObject player = Instantiate(PlayerGO, new Vector3(x, 0, y), Quaternion.identity);
+        player.transform.position = new Vector3(x, 0, y);
+        return player;
     }
 
+    public void TEST()
+    {
+        var position = new Vector3(10, 0, 50);
+        Quaternion rotation = Quaternion.identity;
+        GameObject x = Resources.Load("Prefabs/NPC") as GameObject;
+        UnityEngine.Object.Instantiate(x, position, rotation);
+    }
 }
 
 
